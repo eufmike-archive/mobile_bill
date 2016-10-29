@@ -4,7 +4,14 @@ source("greptest.R")
 readbillingtxt <- function(txt_file){
         #  total amount -----------------------------------------------------------
         line <- readLines(txt_file)
-        total_amount <- line[grepl("^\\$[0-9]{3,4}\\.[0-9]{2}", line)][1]
+        # print(line[grepl("^\\$[0-9]{3,4}\\.[0-9]{2}", line)])
+        total_amount_debited <- line[grepl("^\\$[0-9]{3,4}\\.[0-9]{2}", line)][2]
+        total_amount_debited <- gsub("\\$", "", total_amount_debited)
+        
+        location <- which(grepl("Total New Charges", line))
+        total_n_chg <- gsub("Total New Charges \\$", "", line[location])
+        # print(total_n_chg)
+        
         
         # find phone numbers ------------------------------------------------------
         
@@ -41,15 +48,16 @@ readbillingtxt <- function(txt_file){
                 phone_line <- grep(i, line)
                 # print(line[phone_line])
                 # print(phone_line)
-                b <- grep("^SHIH CHIEN CHENG", line)
+                b <- grep("CHIEN CHENG", line)
                 # print(line[b])
                 # print(b)
                 start_line <- phone_line[phone_line %in% (b-1)]
                 # print("start")
-                print(line[start_line[1]])
+                # print(start_line[1])
+                # print(line[start_line[1]])
                 end_line <- grep(paste0("Total for ", i), line)
                 # print("end")
-                print(line[end_line])
+                # print(line[end_line])
                 section_line <- line[start_line[1]: end_line]
 
                 
@@ -81,11 +89,11 @@ readbillingtxt <- function(txt_file){
                 
                 # Total 
                 total <- greptestvalue("Total for", section_line)
-                
+                total <- gsub("$", "", total)
                 x <- c(monthly_charge, total_sur, total_gov_tax, total)
-                print(x)
+                # print(x)
                 data <- rbind(data, x)
-                print(n)
+                # print(n)
                 n <- n + 1
                 
         }
@@ -105,9 +113,8 @@ readbillingtxt <- function(txt_file){
         data$billing.day <- billing_day 
         
         data <- data[, c(8:11, 1:7)]
-        data$total.amount <- total_amount
-        
-        
+        data$total.amount.debited <- total_amount_debited         
+        data$total.new.charge <- total_n_chg
         return(data)
         
 }
