@@ -75,7 +75,19 @@ data_share
 data_share$average <- round(data_share$average, 2)
 data3 <- merge(data2, data_share)
 
-data3 <- data3 %>% mutate(., mod.Total = phone_base + average + Total.Surcharges.and.Other.Fees + Total.Government.Fees.and.Taxes)
+data3 <- data3 %>% mutate(., mod.Total = phone_base + 
+                                  average + 
+                                  Total.Surcharges.and.Other.Fees + 
+                                  Total.Government.Fees.and.Taxes +
+                                  Installment +
+                                  Upgrade.Fee +
+                                  Activation.Fee +
+                                  Text.Instant.Msgs +
+                                  Data.Overage +
+                                  International.Long.Dis +
+                                  Roaming +
+                                  Plan.Change
+                                        )
 
 write.csv(data3, "data3.csv")
 
@@ -89,12 +101,46 @@ data_total_check <- data3 %>%
                                   total.debited = mean(total.amount.debited),
                                   total.new.charge = mean(total.new.charge)
                                   )
-data_total_check
+
 
 all(data_total_check$total_check == data_total_check$total.debited)
 all(data_total_check$total_check == data_total_check$total.new.charge)
 
+data_total_check <- data_total_check %>%
+                        mutate(delta = round((total_check - total.mod_check), 2))
+
+data_total_check
+
+write.csv(data_total_check, "data_total_check.csv")
+
 # data processing ---------------------------------------------------------
 
- 
+data_output <- data3 %>% 
+                group_by(., mobile.number) %>%
+                summarize(., sum(mod.Total))
+
+user <- c("Shiauhan", 
+          "Mike", 
+          "Yiwen",
+          "Jerry",
+          "Yenyu",
+          "Abbie",
+          "Mike's mom")
+mobile.number <- c("202 615-7195", 
+                "202 615-7277",
+                "202 812-4215", 
+                "561 568-4121",
+                "561 685-7195",
+                "919 627-3815",
+                "561 797-3675" 
+                )
+
+name_number <- data_frame(user, mobile.number)
+
+data_output <- merge(name_number, data_output)
+
+data_output
+
+write.csv(data_output, "mobile_bill.csv")
+write.csv(data3, "mobile_bill_data.csv")
 

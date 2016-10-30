@@ -81,6 +81,105 @@ readbillingtxt <- function(txt_file){
                 monthly_charge <- c(mobile_share_value, discount_for_mobile_share, 
                                     international_roaming, total_monthly)
                 
+                # International Long Distance
+                Inter_LD <- grep("International Long Distance", section_line)
+                billed <- grep("Minutes Billed", section_line)
+                if ((length(billed) == 0 || length(Inter_LD) == 0 )){
+                        ILD_value = 0
+                } else if (!billed %in% (Inter_LD+1)){
+                        ILD_value = 0
+                } else  {
+                        ILD_value_temp <- section_line[billed[billed %in% (Inter_LD+1)[1]]]
+                        ILD_value <- strsplit(ILD_value_temp, " ")[[1]]
+                        ILD_value <- tail(ILD_value, 1)
+                }  
+                
+                # Roaming
+                roaming <- grep("Roaming", section_line)
+                billed <- grep("Minutes Billed", section_line)
+                # print(roaming)
+                # print(billed)
+                # print(billed[billed %in% (roaming+1)])
+                if ((length(billed) == 0 || length(roaming) == 0 )){
+                        r_value = 0
+                } else if (sum(billed %in% (roaming+1)) == 0){
+                        r_value = 0
+                } else  {
+                        position <- billed[billed %in% (roaming+1)][1]
+                        r_value_temp <- section_line[position ]
+                        r_value <- strsplit(r_value_temp, " ")[[1]]
+                        r_value <- tail(r_value, 1)
+                } 
+                
+                # Installment
+                ins <- grep("Installment", section_line)
+                # head(section_line)
+                # print(ins)
+                # print(section_line[ins[2]])
+                if (length(ins) == 0){
+                        ins_value = 0
+                } else {
+                        ins_value_temp <- section_line[ins[2]]
+                        ins_value <- strsplit(ins_value_temp, " ")[[1]]
+                        ins_value <- tail(ins_value, 1)
+                }
+                # print(ins_value)
+                
+                # Upgrade fee
+                upgrade_fee <- grep("Upgrade Fee", section_line)
+                # head(section_line)
+                # print(upgrade_fee)
+                # print(section_line[upgrade_fee[1]])
+                if (length(upgrade_fee) == 0){
+                        uf_value = 0
+                } else {
+                        uf_value_temp <- section_line[upgrade_fee[1]]
+                        uf_value <- strsplit(uf_value_temp, " ")[[1]]
+                        uf_value <- tail(uf_value, 1)
+                }
+                # print(uf_value)
+                
+                # Activation Fee
+                activation_fee <- grep("Activation Fee", section_line)
+                if (length(activation_fee) == 0){
+                        af_value = 0
+                } else {
+                        af_value_temp <- section_line[activation_fee[1]]
+                        af_value <- strsplit(af_value_temp, " ")[[1]]
+                        af_value <- tail(af_value, 1)
+                }  
+                
+                # Text/Instant Msgs
+                msg <- grep("Text/Instant Msgs", section_line)
+                if (length(msg) == 0){
+                        msg_value = 0
+                } else {
+                        msg_value_temp <- section_line[msg[1]]
+                        msg_value <- strsplit(msg_value_temp, " ")[[1]]
+                        msg_value <- tail(msg_value, 1)
+                }        
+                
+                # Data Overage
+                Data_over <- grep("Data Overage", section_line)
+                if (length(Data_over) == 0){
+                        do_value = 0
+                } else {
+                        do_value_temp <- section_line[Data_over[1]]
+                        do_value <- strsplit(do_value_temp, " ")[[1]]
+                        do_value <- tail(do_value, 1)
+                }        
+                
+                # Plan Change
+                Plan_change <- grep("Total Plan Changes", section_line)
+                if (length(Plan_change) == 0){
+                        pc_value = 0
+                } else {
+                        pc_value_temp <- section_line[Plan_change[1]]
+                        pc_value <- strsplit(pc_value_temp, " ")[[1]]
+                        pc_value <- tail(pc_value, 1)
+                } 
+                
+                
                 # Total Surcharges and Other Fees
                 total_sur <- greptestvalue("Total Surcharges and Other Fees", section_line)
                 
@@ -90,7 +189,19 @@ readbillingtxt <- function(txt_file){
                 # Total 
                 total <- greptestvalue("Total for", section_line)
                 total <- gsub("$", "", total)
-                x <- c(monthly_charge, total_sur, total_gov_tax, total)
+                x <- c(monthly_charge, 
+                       msg_value, 
+                       ILD_value, 
+                       r_value,
+                       ins_value, 
+                       uf_value, 
+                       af_value,
+                       do_value,
+                       pc_value,
+                       total_sur, 
+                       total_gov_tax, 
+                       total)
+                
                 # print(x)
                 data <- rbind(data, x)
                 # print(n)
@@ -99,20 +210,30 @@ readbillingtxt <- function(txt_file){
         }
         
         data <- data.frame(data[-1, ])
-        colnames(data) <- c("Mobile.share.value", 
-                            "Discount.for.mobile.share", 
-                            "International.roaming", 
-                            "Total.monthly.charge",
-                            "Total.Surcharges.and.Other.Fees",
-                            "Total.Government.Fees.and.Taxes", 
-                            "Total"
+        names <- c("Mobile.share.value", 
+                   "Discount.for.mobile.share", 
+                   "International.roaming", 
+                   "Total.monthly.charge",
+                   "Text.Instant.Msgs", 
+                   "International.Long.Dis",
+                   "Roaming",
+                   "Installment", 
+                   "Upgrade.Fee",
+                   "Activation.Fee",
+                   "Data.Overage", 
+                   "Plan.Change",
+                   "Total.Surcharges.and.Other.Fees",
+                   "Total.Government.Fees.and.Taxes", 
+                   "Total"
         )
+        
+        colnames(data) <- names
         data$mobile.number <- phone_list 
         data$billing.start <- billing_start
         data$billing.end <- billing_end
         data$billing.day <- billing_day 
         
-        data <- data[, c(8:11, 1:7)]
+        data <- data[, c((length(names)+1): (length(names)+4), 1:length(names))]
         data$total.amount.debited <- total_amount_debited         
         data$total.new.charge <- total_n_chg
         return(data)
