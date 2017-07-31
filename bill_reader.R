@@ -1,11 +1,19 @@
 library(dplyr)
 library(tidyr)
+library(rJava)
 library(xlsx)
 library(ggplot2)
-
+library(lubridate)
 # environment setup -------------------------------------------------------
 
-setwd("/Users/major_minor1982/Documents/programming/R/bill/mobile_bill")
+user_name <- c("SHIAUHAN LI", 
+               "CHIEN CHENG SHIH", 
+               "YI-WEN WANG", 
+               "LI-JIE WANG", 
+               "SHIH CHIEN CHENG", 
+               "ZI FU WANG")
+
+setwd("/Users/michaelshih/Documents/code/mobile_bill/")
 dir <- getwd()
 
 import_folder <- "files" # set the import folder
@@ -30,10 +38,12 @@ source("readbillingtxt.R")
 data <- data_frame()
 file <- 1
 for (i in file_dir){
-        print(paste("file", file))
+        print(paste("file", file_dir[file]))
         data.temp <- readbillingtxt(i)        
         data <- rbind(data, data.temp)
+        print(data.temp)
         file <- file + 1
+         
 }        
 
 data1 <- tbl_df(data)
@@ -125,7 +135,10 @@ user <- c("Shiauhan",
           "Jerry",
           "Yenyu",
           "Abbie",
-          "Mike's mom")
+          "Mike's mom",
+          "Zi-Fu Wang_1", 
+          "Zi-Fu Wang_2")
+
 mobile.number <- c("202 615-7195", 
                 "202 615-7277",
                 "202 812-4215", 

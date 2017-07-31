@@ -4,13 +4,18 @@ source("greptest.R")
 readbillingtxt <- function(txt_file){
         #  total amount -----------------------------------------------------------
         line <- readLines(txt_file)
-        # print(line[grepl("^\\$[0-9]{3,4}\\.[0-9]{2}", line)])
-        total_amount_debited <- line[grepl("^\\$[0-9]{3,4}\\.[0-9]{2}", line)][2]
-        total_amount_debited <- gsub("\\$", "", total_amount_debited)
         
-        location <- which(grepl("Total New Charges", line))
-        total_n_chg <- gsub("Total New Charges \\$", "", line[location])
-        # print(total_n_chg)
+        previous_balance <- line[grep("^Previous Balance", line) - 1]
+        previous_balance <- as.numeric(gsub("\\$", "", previous_balance))
+        print(paste("Previous Balance: $", previous_balance))
+
+        total_amount_debited <- line[grep("^Amount to be Debited", line) - 1]
+        total_amount_debited <- as.numeric(gsub("\\$", "", total_amount_debited))
+        print(paste("Total Amount Debited: $", total_amount_debited))
+
+        new_charge <- line[grep("^New Charges", line)]
+        new_charge <- as.numeric(gsub("New Charges \\$", "", new_charge))
+        print(paste("New Charges: $", new_charge))
         
         
         # find phone numbers ------------------------------------------------------
@@ -20,67 +25,77 @@ readbillingtxt <- function(txt_file){
         phone_string <- phone_string[phone_string < end_list]
         phone_list <- line[phone_string]
         phone_list <- gsub(" [0-9]$", "", phone_list)
-        # print("this is the phone list")
-        # print(phone_list)
-        
-        # find date ---------------------------------------------------------------
-        library(lubridate)
+        phone_list <- gsub(" CR", "", phone_list)  ##any combination of this string
+
+        print("this is the list of phone number")
+        print(phone_list)
+
+        # # find date ---------------------------------------------------------------
+
         date_info <- strsplit(line[grep("^[0-9]{2}/[0-9]{2}/[0-9]{2}", line)][1], " ")[[1]]
-        date <- date_info[grepl("^[0-9]{2}/[0-9]{2}/[0-9]{2}$", date_info)]
-        date <- mdy(date)
+
+        date_01 <- date_info[grepl("^[0-9]{2}/[0-9]{2}/[0-9]{2}$", date_info)]
+        date_01 <- mdy(date_01)
+        print(date_01)
         
-        date <- if (date[2] > date [1]){ date = date
-        } else { date <- c(date[2], date[1])
+        date_01 <- if (date_01[2] > date_01 [1]){ date_01 = date_01
+        } else { date_01 <- c(date_01[2], date_01[1])
         }
-        
-        billing_start <- date[1]
-        billing_end <- date[2]
+        billing_start <- date_01[1]
+        billing_end <- date_01[2]
         billing_day <- difftime(billing_end, billing_start, units = "days")
         billing_day <- as.numeric(billing_day) + 1
-        
-        # seperate phone info section ---------------------------------------------
-        
+        print(billing_start)
+        print(billing_end)
+        print(billing_day)
+
+        # # seperate phone info section ---------------------------------------------
+
         user_amount <- length(phone_list)
-        
+
         data <- array()
         n <- 1
         for (i in phone_list){
                 phone_line <- grep(i, line)
-                # print(line[phone_line])
-                # print(phone_line)
-                b <- grep("CHIEN CHENG", line)
-                # print(line[b])
-                # print(b)
-                start_line <- phone_line[phone_line %in% (b-1)]
-                # print("start")
-                # print(start_line[1])
-                # print(line[start_line[1]])
+                print(line[phone_line])
+                print(phone_line)
+                
+                start_line <- c()
+                for (j in phone_line){
+                        if (line[j + 1] %in% user_name){
+                                start_line <- c(start_line, j)
+                        }
+                }
+                print(start_line)
+                print(start_line[1])
+                print("start")
+                print(line[start_line[1]])
+                
                 end_line <- grep(paste0("Total for ", i), line)
-                # print("end")
-                # print(line[end_line])
+                print("end")
+                print(line[end_line])
                 section_line <- line[start_line[1]: end_line]
 
-                
                 # monthly charge
-                mobile_share_value <- greptestvalue("Mobile Share Value(.*?)[0-9]{2}\\.[0-9]{2}$|Access for iPhone 4G LTE", 
+                mobile_share_value <- greptestvalue("Mobile Share Value(.*?)[0-9]{2}\\.[0-9]{2}$|Access for iPhone 4G LTE",
                                           section_line)
-                
+
                 discount_for_mobile_share <- greptestvalue("Discount for Mobile Share Value Savings|Discount for Access", section_line)
-                
-                
+
+
                 if (grepl("CR$", discount_for_mobile_share)){
                         discount_for_mobile_share <- gsub("CR$", "", discount_for_mobile_share)
                         discount_for_mobile_share <- paste0("-", discount_for_mobile_share)
                 } else {
-                        
+
                 }
-                
+
                 international_roaming <- greptestvalue("International(.*?)[0-9]{1,2}", section_line)
                 total_monthly <- greptestvalue("Total Monthly Charges", section_line)
-                
-                monthly_charge <- c(mobile_share_value, discount_for_mobile_share, 
+
+                monthly_charge <- c(mobile_share_value, discount_for_mobile_share,
                                     international_roaming, total_monthly)
-                
+
                 # International Long Distance
                 Inter_LD <- grep("International Long Distance", section_line)
                 billed <- grep("Minutes Billed", section_line)
@@ -92,8 +107,8 @@ readbillingtxt <- function(txt_file){
                         ILD_value_temp <- section_line[billed[billed %in% (Inter_LD+1)[1]]]
                         ILD_value <- strsplit(ILD_value_temp, " ")[[1]]
                         ILD_value <- tail(ILD_value, 1)
-                }  
-                
+                }
+
                 # Roaming
                 roaming <- grep("Roaming", section_line)
                 billed <- grep("Minutes Billed", section_line)
@@ -109,8 +124,8 @@ readbillingtxt <- function(txt_file){
                         r_value_temp <- section_line[position ]
                         r_value <- strsplit(r_value_temp, " ")[[1]]
                         r_value <- tail(r_value, 1)
-                } 
-                
+                }
+
                 # Installment
                 ins <- grep("Installment", section_line)
                 # head(section_line)
@@ -124,7 +139,7 @@ readbillingtxt <- function(txt_file){
                         ins_value <- tail(ins_value, 1)
                 }
                 # print(ins_value)
-                
+
                 # Upgrade fee
                 upgrade_fee <- grep("Upgrade Fee", section_line)
                 # head(section_line)
@@ -138,7 +153,7 @@ readbillingtxt <- function(txt_file){
                         uf_value <- tail(uf_value, 1)
                 }
                 # print(uf_value)
-                
+
                 # Activation Fee
                 activation_fee <- grep("Activation Fee", section_line)
                 if (length(activation_fee) == 0){
@@ -147,8 +162,8 @@ readbillingtxt <- function(txt_file){
                         af_value_temp <- section_line[activation_fee[1]]
                         af_value <- strsplit(af_value_temp, " ")[[1]]
                         af_value <- tail(af_value, 1)
-                }  
-                
+                }
+
                 # Text/Instant Msgs
                 msg <- grep("Text/Instant Msgs", section_line)
                 if (length(msg) == 0){
@@ -157,8 +172,8 @@ readbillingtxt <- function(txt_file){
                         msg_value_temp <- section_line[msg[1]]
                         msg_value <- strsplit(msg_value_temp, " ")[[1]]
                         msg_value <- tail(msg_value, 1)
-                }        
-                
+                }
+
                 # Data Overage
                 Data_over <- grep("Data Overage", section_line)
                 if (length(Data_over) == 0){
@@ -167,8 +182,8 @@ readbillingtxt <- function(txt_file){
                         do_value_temp <- section_line[Data_over[1]]
                         do_value <- strsplit(do_value_temp, " ")[[1]]
                         do_value <- tail(do_value, 1)
-                }        
-                
+                }
+
                 # Plan Change
                 Plan_change <- grep("Total Plan Changes", section_line)
                 if (length(Plan_change) == 0){
@@ -177,65 +192,65 @@ readbillingtxt <- function(txt_file){
                         pc_value_temp <- section_line[Plan_change[1]]
                         pc_value <- strsplit(pc_value_temp, " ")[[1]]
                         pc_value <- tail(pc_value, 1)
-                } 
-                
-                
+                }
+
+
                 # Total Surcharges and Other Fees
                 total_sur <- greptestvalue("Total Surcharges and Other Fees", section_line)
-                
+
                 # Total Government Fees and Taxes
                 total_gov_tax <- greptestvalue("Total Government Fees and Taxes", section_line)
-                
-                # Total 
+
+                # Total
                 total <- greptestvalue("Total for", section_line)
                 total <- gsub("$", "", total)
-                x <- c(monthly_charge, 
-                       msg_value, 
-                       ILD_value, 
+                x <- c(monthly_charge,
+                       msg_value,
+                       ILD_value,
                        r_value,
-                       ins_value, 
-                       uf_value, 
+                       ins_value,
+                       uf_value,
                        af_value,
                        do_value,
                        pc_value,
-                       total_sur, 
-                       total_gov_tax, 
+                       total_sur,
+                       total_gov_tax,
                        total)
-                
+
                 # print(x)
                 data <- rbind(data, x)
                 # print(n)
                 n <- n + 1
-                
+
         }
-        
+
         data <- data.frame(data[-1, ])
-        names <- c("Mobile.share.value", 
-                   "Discount.for.mobile.share", 
-                   "International.roaming", 
+        names <- c("Mobile.share.value",
+                   "Discount.for.mobile.share",
+                   "International.roaming",
                    "Total.monthly.charge",
-                   "Text.Instant.Msgs", 
+                   "Text.Instant.Msgs",
                    "International.Long.Dis",
                    "Roaming",
-                   "Installment", 
+                   "Installment",
                    "Upgrade.Fee",
                    "Activation.Fee",
-                   "Data.Overage", 
+                   "Data.Overage",
                    "Plan.Change",
                    "Total.Surcharges.and.Other.Fees",
-                   "Total.Government.Fees.and.Taxes", 
+                   "Total.Government.Fees.and.Taxes",
                    "Total"
         )
-        
+
         colnames(data) <- names
-        data$mobile.number <- phone_list 
+        data$mobile.number <- phone_list
         data$billing.start <- billing_start
         data$billing.end <- billing_end
-        data$billing.day <- billing_day 
-        
+        data$billing.day <- billing_day
+
         data <- data[, c((length(names)+1): (length(names)+4), 1:length(names))]
-        data$total.amount.debited <- total_amount_debited         
-        data$total.new.charge <- total_n_chg
+        data$total.amount.debited <- total_amount_debited
+        data$total.new.charge <- new_charge
         return(data)
         
 }
