@@ -18,8 +18,8 @@ batchpdftxt <- function (import_folder, export_folder){
         
         files <- list.files(import_folder)
         files_txt <- files[grep(".txt$", files)]
-        import <- file.path(dir, import_folder, files_txt)
-        export <- file.path(dir, export_folder, files_txt)
+        import <- file.path(import_folder, files_txt)
+        export <- file.path(export_folder, files_txt)
         
         file.rename(import, export)
 }

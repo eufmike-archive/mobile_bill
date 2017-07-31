@@ -82,14 +82,6 @@ readbillingtxt <- function(txt_file){
 
                 discount_for_mobile_share <- greptestvalue("Discount for Mobile Share Value Savings|Discount for Access", section_line)
 
-
-                if (grepl("CR$", discount_for_mobile_share)){
-                        discount_for_mobile_share <- gsub("CR$", "", discount_for_mobile_share)
-                        discount_for_mobile_share <- paste0("-", discount_for_mobile_share)
-                } else {
-
-                }
-
                 international_roaming <- greptestvalue("International(.*?)[0-9]{1,2}", section_line)
                 total_monthly <- greptestvalue("Total Monthly Charges", section_line)
 
@@ -216,8 +208,19 @@ readbillingtxt <- function(txt_file){
                        total_sur,
                        total_gov_tax,
                        total)
+                
+                for (i in 1:length(x)){
+                        if (grepl("CR", x[i])){
+                                temp.x <- gsub("CR", "", x[i])
+                                temp.x <- paste0("-", temp.x)
+                                x[i] <- temp.x
+                        } else {
+                                
+                        }
+                        
+                }
 
-                # print(x)
+                print(x)
                 data <- rbind(data, x)
                 # print(n)
                 n <- n + 1

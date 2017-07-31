@@ -16,23 +16,23 @@ user_name <- c("SHIAUHAN LI",
 setwd("/Users/michaelshih/Documents/code/mobile_bill/")
 dir <- getwd()
 
-import_folder <- "files" # set the import folder
-export_folder <- "export" # set the export folder
+pdf_input_dir <- file.path(dir, "files") # set the import folder
+pdf_output_dir <- file.path(dir, "txt_export") # set the export folder
 
 # create a folder for exported
 if ("./export" %in% list.dirs()){
-} else {dir.create("export")
+} else {dir.create("txt_export")
 }
 
 # convert from pdf to txt files -------------------------------------------
 source("batchpdftxt.R")
-batchpdftxt(import_folder, export_folder)
+batchpdftxt(pdf_input_dir, pdf_output_dir)
 
 # read basic information --------------------------------------------------
 
 dir <- getwd()
-files <- list.files(file.path(dir, "export"))
-file_dir <- file.path(dir, "export", files)
+files <- list.files(pdf_output_dir)
+file_dir <- file.path(pdf_output_dir, files)
 
 source("readbillingtxt.R")
 data <- data_frame()
@@ -48,7 +48,6 @@ for (i in file_dir){
 
 data1 <- tbl_df(data)
 write.csv(data1, "data1.csv")
-
 
 # factor to numeric -------------------------------------------------------
 
