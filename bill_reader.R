@@ -6,12 +6,39 @@ library(ggplot2)
 library(lubridate)
 # environment setup -------------------------------------------------------
 
+user <- c("Shiauhan", 
+          "Mike", 
+          "Yiwen",
+          "Jerry",
+          "Yenyu",
+          "Abbie",
+          "Mike's mom",
+          "Zi-Fu Wang_1", 
+          "Zi-Fu Wang_2")
+
+mobile.number <- c("202 615-7195", 
+                   "202 615-7277",
+                   "202 812-4215", 
+                   "561 568-4121",
+                   "561 685-7195",
+                   "919 627-3815",
+                   "561 797-3675", 
+                   "561 317-8725", 
+                   "561 410-2979"
+)
+
 user_name <- c("SHIAUHAN LI", 
                "CHIEN CHENG SHIH", 
                "YI-WEN WANG", 
                "LI-JIE WANG", 
+               "",
+               "",
                "SHIH CHIEN CHENG", 
+               "ZI FU WANG",
                "ZI FU WANG")
+
+user_data <- data.frame(user, mobile.number, user_name)
+write.csv(user_data, "user_data.csv")
 
 setwd("/Users/michaelshih/Documents/code/mobile_bill/")
 dir <- getwd()
@@ -47,7 +74,7 @@ for (i in file_dir){
 }        
 
 data1 <- tbl_df(data)
-write.csv(data1, "data1.csv")
+write.csv(data1, "01_before_adjusted.csv")
 
 # factor to numeric -------------------------------------------------------
 
@@ -66,12 +93,11 @@ data2 <- data2 %>% mutate(phone_base = ifelse(Total.monthly.charge == 40, 40,
                 ifelse(Total.monthly.charge == 0, 0 ,15))) %>%
                 mutate(share_chg = Total.monthly.charge - phone_base)
 
-write.csv(data2, "data2.csv")
-
 data2 <- data2[data2$Total.monthly.charge != 0, ]
 data2
 
-write.csv(data2, "data2.csv")
+write.csv(data2, "02_with_phone_base.csv")
+
 # monthly share charge ----------------------------------------------------
 
 data_share <- data2 %>% 
@@ -98,7 +124,7 @@ data3 <- data3 %>% mutate(., mod.Total = phone_base +
                                   Plan.Change
                                         )
 
-write.csv(data3, "data3.csv")
+write.csv(data3, "03_after_adjusted.csv")
 
 
 # data checking -----------------------------------------------------------
@@ -114,7 +140,7 @@ data_total_check <- data3 %>%
 
 all(data_total_check$total_check == data_total_check$total.debited)
 all(data_total_check$total_check == data_total_check$total.new.charge)
-
+ 
 data_total_check <- data_total_check %>%
                         mutate(delta = round((total_check - total.mod_check), 2))
 
@@ -128,24 +154,6 @@ data_output <- data3 %>%
                 group_by(., mobile.number) %>%
                 summarize(., sum(mod.Total))
 
-user <- c("Shiauhan", 
-          "Mike", 
-          "Yiwen",
-          "Jerry",
-          "Yenyu",
-          "Abbie",
-          "Mike's mom",
-          "Zi-Fu Wang_1", 
-          "Zi-Fu Wang_2")
-
-mobile.number <- c("202 615-7195", 
-                "202 615-7277",
-                "202 812-4215", 
-                "561 568-4121",
-                "561 685-7195",
-                "919 627-3815",
-                "561 797-3675" 
-                )
 
 name_number <- data_frame(user, mobile.number)
 
